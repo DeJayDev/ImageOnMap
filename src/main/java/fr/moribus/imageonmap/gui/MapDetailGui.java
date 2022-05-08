@@ -47,6 +47,7 @@ import fr.zcraft.quartzlib.components.gui.Gui;
 import fr.zcraft.quartzlib.components.gui.GuiAction;
 import fr.zcraft.quartzlib.components.gui.PromptGui;
 import fr.zcraft.quartzlib.components.i18n.I;
+import fr.zcraft.quartzlib.tools.PluginLogger;
 import fr.zcraft.quartzlib.tools.items.ItemStackBuilder;
 import fr.zcraft.quartzlib.tools.runners.RunTask;
 import java.util.List;
@@ -212,33 +213,35 @@ public class MapDetailGui extends ExplorerGui<Integer> {
             return;
         }
 
-        close();
-        close();
+        try {
+            PromptGui.prompt(getPlayer(), newName -> {
+                if (!Permissions.RENAME.grantedTo(getPlayer())) {
+                    I.sendT(getPlayer(), "{ce}You are no longer allowed to do that.");
+                    return;
+                }
 
-        new AnvilGUI.Builder()
-                .onComplete((player, newName) -> {
-                    if (newName == null || newName.isEmpty()) {
-                        return AnvilGUI.Response.text(I.t("{ce}Map names can't be empty."));
-                    }
-                    if (newName.equals(map.getName())) {
-                        return AnvilGUI.Response.close();
-                    }
+                if (newName == null || newName.isEmpty()) {
+                    I.sendT(getPlayer(), "{ce}Map names can't be empty.");
+                    return;
+                }
+                if (newName.equals(map.getName())) {
+                    return;
+                }
 
-                    map.rename(newName);
-                    return AnvilGUI.Response.text(I.t("{cs}Map successfully renamed."));
-                })
-                .text(map.getName())
-                .itemLeft(new ItemStack(Material.MAP))
-                .title(I.t("{ce}What's the new name?"))
-                .plugin(ImageOnMap.getPlugin())
-                .open(getPlayer());
-    }
+                map.rename(newName);
+                I.sendT(getPlayer(), "{cs}Map successfully renamed.");
 
-    ItemStack item = new ItemStack(Material.BARRIER);
-    public void lol() {
-        item.editMeta(meta -> {
-            meta.lore(List.of(Component.text("lol"), Component.text("hey")));
-        });
+                if (getParent() != null) {
+                    RunTask.later(() -> Gui.open(getPlayer(), this), 1L);
+
+                } else {
+                    close();
+                }
+            }, map.getName(), this);
+
+        } catch (IllegalStateException e) {
+            PluginLogger.error("Error while renaming map: ", e);
+        }
     }
 
     @GuiAction("delete")

@@ -261,6 +261,7 @@ public class MapItemManager implements Listener {
         frame.setItem(new ItemStack(Material.AIR));
         if (SplatterMapManager.hasSplatterAttributes(mapItem)) {
             if (!SplatterMapManager.placeSplatterMap(frame, player, event)) {
+
                 event.setCancelled(true); //In case of an error allow to cancel map placement
                 return;
             }
@@ -281,22 +282,21 @@ public class MapItemManager implements Listener {
                 final ItemStack frameItem = mapItem.clone();
                 final ItemMeta meta = frameItem.getItemMeta();
 
-                meta.setDisplayName(null);
-                frameItem.setItemMeta(meta);
-                RunTask.later(() -> {
-                    frame.setItem(frameItem);
-                    frame.setRotation(Rotation.NONE);
-                }, 5L);
 
-            } else {
+            final ItemStack frameItem = mapItem.clone();
+            final ItemMeta meta = frameItem.getItemMeta();
+
+            meta.setDisplayName(null);
+            frameItem.setItemMeta(meta);
+            RunTask.later(() -> {
+                frame.setItem(frameItem);
                 frame.setRotation(Rotation.NONE);
                 RunTask.later(() -> frame.setItem(mapItem), 5L);
 
             }
 
         }
-
-        ItemUtils.consumeItem(player, mapItem);
+        //ItemUtils.consumeItem(player, mapItem); //useless no?
     }
 
     private static void onItemFrameRemove(ItemFrame frame, Player player, EntityDamageByEntityEvent event) {
@@ -315,7 +315,6 @@ public class MapItemManager implements Listener {
                             || !SplatterMapManager.hasSplatterMap(player, poster)) {
                         poster.give(player);
                     }
-
                     return;
                 }
             }
@@ -324,7 +323,7 @@ public class MapItemManager implements Listener {
         if (!MapManager.managesMap(frame.getItem())) {
             return;
         }
-
+        SplatterMapManager.removePropertiesFromFrames(player, frame);
         frame.setItem(new ItemStackBuilder(item)
                 .title(getMapTitle(item))
                 .hideAllAttributes()
