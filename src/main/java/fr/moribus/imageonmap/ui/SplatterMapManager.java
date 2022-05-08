@@ -37,6 +37,7 @@
 package fr.moribus.imageonmap.ui;
 
 import com.google.common.collect.ImmutableMap;
+import fr.moribus.imageonmap.Permissions;
 import fr.moribus.imageonmap.image.MapInitEvent;
 import fr.moribus.imageonmap.map.ImageMap;
 import fr.moribus.imageonmap.map.MapManager;
@@ -51,6 +52,7 @@ import fr.zcraft.quartzlib.tools.world.FlatLocation;
 import fr.zcraft.quartzlib.tools.world.WorldUtils;
 import net.minecraft.nbt.NBTList;
 import net.minecraft.nbt.NBTTagCompound;
+import java.lang.reflect.Method;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -64,7 +66,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MapMeta;
 
-
+//TODO rework splatter effect, using ID is far more stable than nbt tags.
+// To update when adding small picture previsualization.
 public abstract class SplatterMapManager {
     private SplatterMapManager() {
     }
@@ -136,6 +139,7 @@ public abstract class SplatterMapManager {
      * @return True if the attribute was detected.
      */
     public static boolean hasSplatterAttributes(ItemStack itemStack) {
+
         try {
             net.minecraft.world.item.ItemStack mcStack = net.minecraft.world.item.ItemStack.fromBukkitCopy(itemStack);
             final NBTTagCompound nbt = mcStack.getTag();
@@ -364,10 +368,31 @@ public abstract class SplatterMapManager {
 
         for (ItemFrame frame : matchingFrames) {
             if (frame != null) {
+                removePropertiesFromFrames(player, frame);
                 frame.setItem(null);
             }
         }
 
         return poster;
+    }
+
+    public static void addPropertiesToFrames(Player player, ItemFrame frame) {
+        if (Permissions.PLACE_INVISIBLE_SPLATTER_MAP.grantedTo(player)) {
+            try {
+                Method setVisible = frame.getClass().getMethod("setVisible", boolean.class);
+                setVisible.invoke(frame, false);
+            } catch (Exception e) {
+                //1.16-
+            }
+        }
+    }
+
+    public static void removePropertiesFromFrames(Player player, ItemFrame frame) {
+        try {
+            Method setVisible = frame.getClass().getMethod("setVisible", boolean.class);
+            setVisible.invoke(frame, true);
+        } catch (Exception e) {
+            //1.16-
+        }
     }
 }
